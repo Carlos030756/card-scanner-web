@@ -1,0 +1,9 @@
+{
+  "name": "Card Scanner Web",
+  "short_name": "CardScanner",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#111827",
+  "icons": []
+}
