@@ -1,4 +1,7 @@
-const fileInput = document.getElementById('file');
+const fileCamera = document.getElementById('fileCamera');
+const fileGallery = document.getElementById('fileGallery');
+const btnCamera = document.getElementById('btnCamera');
+const btnGallery = document.getElementById('btnGallery');
 const sendBtn = document.getElementById('sendBtn');
 const statusEl = document.getElementById('status');
 const preview = document.getElementById('preview');
@@ -6,19 +9,34 @@ const result = document.getElementById('result');
 
 let imageBase64 = null;
 
-fileInput.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) { imageBase64 = null; sendBtn.disabled = true; preview.innerHTML = ''; return; }
+// --- Apri fotocamera ---
+btnCamera.addEventListener('click', () => fileCamera.click());
 
-  // anteprima
-  const url = URL.createObjectURL(file);
-  preview.innerHTML = `<img src="${url}" alt="preview">`;
+// --- Apri galleria ---
+btnGallery.addEventListener('click', () => fileGallery.click());
 
-  // riduci un po' la risoluzione lato client per upload più rapido
-  imageBase64 = await toBase64Resized(file, 1600, 0.85);
-  sendBtn.disabled = !imageBase64;
+// --- Gestione caricamento immagine (camera o gallery) ---
+[fileCamera, fileGallery].forEach(input => {
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      imageBase64 = null;
+      sendBtn.disabled = true;
+      preview.innerHTML = '';
+      return;
+    }
+
+    // Anteprima
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${url}" alt="preview">`;
+
+    // Converto in base64 ridimensionato per upload più rapido
+    imageBase64 = await toBase64Resized(file, 1600, 0.85);
+    sendBtn.disabled = !imageBase64;
+  });
 });
 
+// --- Invio a Netlify Function ---
 sendBtn.addEventListener('click', async () => {
   if (!imageBase64) return;
   sendBtn.disabled = true;
@@ -28,9 +46,10 @@ sendBtn.addEventListener('click', async () => {
   try {
     const resp = await fetch('/.netlify/functions/scan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, // semplice: nessun CORS perché chiamiamo la function sullo STESSO dominio
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64, fileName: 'biglietto.jpg' })
     });
+
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Errore');
 
@@ -55,7 +74,7 @@ sendBtn.addEventListener('click', async () => {
   }
 });
 
-// Utility: ridimensiona e converte a base64
+// --- Utility: ridimensiona e converte a base64 ---
 async function toBase64Resized(file, maxWidth = 1600, quality = 0.85) {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, maxWidth / bitmap.width);
