@@ -1,5 +1,5 @@
 /******** CONFIG ********/
-const API_URL = "https://card-scanner-dd5685.netlify.app/";   // <-- incolla qui l'URL della tua Web App Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbxGpl47I6Yaf_oov_Vrzowjt9Ld6mFihPyx6Q4AjAYEyc2hWN48T6nT-nm3p5XYJoCb1Q/exec"; // <-- URL Web App Apps Script
 const API_KEY = "BigKeyMaxy1";       // <-- deve combaciare con quello nello script Apps Script
 
 /******** DOM refs ********/
