@@ -55,12 +55,12 @@ sendBtn.addEventListener("click", async () => {
   showStatus("Processing...");
 
   try {
-    const res = await fetch(`${API_URL}?key=${encodeURIComponent(API_KEY)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/.netlify/functions/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, // qui va bene JSON, è stessa origine
       body: JSON.stringify({
         imageBase64,
-        fileName: "card.jpg" // va bene anche per PNG, il backend rileva il mime
+        fileName: 'card.jpg'
       })
     });
 

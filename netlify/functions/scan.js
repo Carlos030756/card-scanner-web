@@ -1,59 +1,37 @@
-exports.handler = async (event) => {
+// netlify/functions/scan.js
+export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') {
       return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { imageBase64, fileName } = JSON.parse(event.body || '{}');
-    if (!imageBase64) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: 'imageBase64 mancante' })
-      };
+    const { APPSSCRIPT_URL, API_KEY } = process.env;
+    if (!APPSSCRIPT_URL) {
+      return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Missing APPSSCRIPT_URL env var' }) };
     }
 
-    const url = process.env.APPS_SCRIPT_URL; // es: https://script.google.com/macros/s/.../exec
-    const key = process.env.APPS_SCRIPT_KEY; // es: b1gL0ngS3cr3t_2025_Dino!
-    if (!url || !key) {
-      return {
-        statusCode: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: 'Config mancante' })
-      };
-    }
+    // Il client ci manda JSON (imageBase64, fileName)
+    const bodyIn = event.body || '{}';
 
-    const resp = await fetch(`${url}?key=${encodeURIComponent(key)}`, {
+    // Forward verso Apps Script (server-side: niente CORS)
+    const upstream = await fetch(`${APPSSCRIPT_URL}?key=${encodeURIComponent(API_KEY || '')}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageBase64,
-        fileName: fileName || 'biglietto.jpg'
-      })
+      // Importante: text/plain per evitare preflight inutili lato GAS
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: bodyIn
     });
 
-    const text = await resp.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return {
-        statusCode: 502,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: 'Risposta non JSON', raw: text.slice(0, 200) })
-      };
-    }
+    const text = await upstream.text(); // potrebbe essere JSON o errore testuale
 
     return {
-      statusCode: resp.status,
+      statusCode: upstream.status,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: text
     };
-  } catch (e) {
+  } catch (err) {
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: String(e) })
+      body: JSON.stringify({ ok: false, error: String(err) })
     };
   }
-};
+}
