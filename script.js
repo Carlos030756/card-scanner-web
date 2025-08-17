@@ -1,101 +1,74 @@
-const fileCamera = document.getElementById('fileCamera');
-const fileGallery = document.getElementById('fileGallery');
-const btnCamera = document.getElementById('btnCamera');
-const btnGallery = document.getElementById('btnGallery');
-const sendBtn = document.getElementById('sendBtn');
-const statusEl = document.getElementById('status');
-const preview = document.getElementById('preview');
-const result = document.getElementById('result');
+const API_URL = "YOUR_WEBAPP_URL"; // ← qui inserisci l’URL del tuo Apps Script WebApp
+const API_KEY = "BigKeyMaxy1";     // deve corrispondere a quello che hai nello script Google
 
-let imageBase64 = null;
+let currentImageBase64 = "";
 
-// --- Apri fotocamera ---
-btnCamera.addEventListener('click', () => fileCamera.click());
+// Buttons
+const btnCamera = document.getElementById("btnCamera");
+const btnGallery = document.getElementById("btnGallery");
+const fileCamera = document.getElementById("fileCamera");
+const fileGallery = document.getElementById("fileGallery");
+const sendBtn = document.getElementById("sendBtn");
+const resultDiv = document.getElementById("result");
 
-// --- Apri galleria ---
-btnGallery.addEventListener('click', () => fileGallery.click());
+// Open camera
+btnCamera.addEventListener("click", () => fileCamera.click());
+// Open gallery
+btnGallery.addEventListener("click", () => fileGallery.click());
 
-// --- Gestione caricamento immagine (camera o gallery) ---
+// Handle image selection
 [fileCamera, fileGallery].forEach(input => {
-  input.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      imageBase64 = null;
-      sendBtn.disabled = true;
-      preview.innerHTML = '';
-      return;
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        currentImageBase64 = reader.result.split(",")[1];
+        resultDiv.innerHTML = `<p><em>Image ready, press "Extract & Save"</em></p>`;
+        sendBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
     }
-
-    // Anteprima
-    const url = URL.createObjectURL(file);
-    preview.innerHTML = `<img src="${url}" alt="preview">`;
-
-    // Converto in base64 ridimensionato per upload più rapido
-    imageBase64 = await toBase64Resized(file, 1600, 0.85);
-    sendBtn.disabled = !imageBase64;
   });
 });
 
-// --- Invio a Netlify Function ---
-sendBtn.addEventListener('click', async () => {
-  if (!imageBase64) return;
+// Send image to backend
+sendBtn.addEventListener("click", async () => {
+  if (!currentImageBase64) return;
+
+  resultDiv.innerHTML = `<p><em>Processing...</em></p>`;
   sendBtn.disabled = true;
-  statusEl.textContent = 'Elaborazione…';
-  result.style.display = 'none';
 
   try {
-    const resp = await fetch('/.netlify/functions/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64, fileName: 'biglietto.jpg' })
+    const res = await fetch(`${API_URL}?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageBase64: currentImageBase64,
+        fileName: "card.jpg"
+      })
     });
 
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Errore');
+    const data = await res.json();
 
-    const p = data.parsed || {};
-    result.innerHTML = `
-      <div><strong>Nome</strong>: ${p.full_name || ''}</div>
-      <div><strong>Azienda</strong>: ${p.company || ''}</div>
-      <div><strong>Ruolo</strong>: ${p.role || ''}</div>
-      <div><strong>Email</strong>: ${p.email || ''}</div>
-      <div><strong>Telefono</strong>: ${p.phone || ''}</div>
-      <div><strong>Website</strong>: ${p.website || ''}</div>
-      <div><strong>Indirizzo</strong>: ${p.address || ''}</div>
-    `;
-    result.style.display = 'block';
-    statusEl.textContent = 'Salvato ✅';
+    if (data.ok) {
+      const p = data.parsed;
+      resultDiv.innerHTML = `
+        <p><strong>Name:</strong> ${p.full_name || ""}</p>
+        <p><strong>Company:</strong> ${p.company || ""}</p>
+        <p><strong>Role:</strong> ${p.role || ""}</p>
+        <p><strong>Email:</strong> ${p.email || ""}</p>
+        <p><strong>Phone:</strong> ${p.phone || ""}</p>
+        <p><strong>Website:</strong> ${p.website || ""}</p>
+        <p><strong>Address:</strong> ${p.address || ""}</p>
+        <p style="color:green"><strong>Saved ✔</strong></p>
+      `;
+    } else {
+      throw new Error(data.error || "Unknown error");
+    }
   } catch (err) {
-    console.error(err);
-    statusEl.textContent = 'Errore ❌';
-    alert(String(err.message || err));
-  } finally {
-    sendBtn.disabled = false;
+    resultDiv.innerHTML = `<p style="color:red"><strong>Error:</strong> ${err.message}</p>`;
   }
+
+  sendBtn.disabled = false;
 });
-
-// --- Utility: ridimensiona e converte a base64 ---
-async function toBase64Resized(file, maxWidth = 1600, quality = 0.85) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxWidth / bitmap.width);
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(bitmap, 0, 0, w, h);
-
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
-  const b64 = await blobToBase64(blob);
-  return b64.split(',')[1]; // togli "data:image/jpeg;base64,"
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
-}

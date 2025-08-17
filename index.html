@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport"
         content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta name="theme-color" content="#0a84ff" />
-  <title>Scanner Biglietti da Visita</title>
+  <title>Business Card Scanner</title>
 
   <style>
     :root{
@@ -41,10 +41,10 @@
 
     .container {
       width: 100%; max-width: 820px; margin: 0 auto; padding: 16px;
-      padding-bottom: 100px; /* spazio per il pulsante fisso */
+      padding-bottom: 100px; /* room for bottom button */
     }
 
-    h1 { font-size: 1.25rem; margin: 6px 0 16px; font-weight: 700; }
+    h1 { font-size: 1.25rem; margin: 6px 0 16px; font-weight: 700; text-align:center; }
 
     .card {
       background: var(--card);
@@ -67,6 +67,7 @@
       background: #1a1f2a; color: var(--text);
       transition: transform .06s ease, background .2s ease, border-color .2s ease;
       -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
     }
     .btn:active { transform: scale(0.98); }
     .btn-outline { background: transparent; }
@@ -75,7 +76,7 @@
     }
     .btn-primary:active { background: var(--primary-pressed); }
 
-    .hint { color: var(--muted); font-size: .92rem; margin: 6px 2px 0; }
+    .hint { color: var(--muted); font-size: .92rem; margin: 6px 2px 0; text-align:left; }
 
     #preview img {
       width: 100%; height: auto; display: block;
@@ -86,7 +87,7 @@
     #result {
       margin-top: 12px; padding: 12px;
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; line-height: 1.35;
+      border-radius: 12px; line-height: 1.35; text-align:left;
     }
     #result div { margin: 6px 0; }
 
@@ -96,7 +97,7 @@
     .ok { color: var(--ok); }
     .err { color: var(--err); }
 
-    /* pulsante di invio fisso in basso (comodo su mobile) */
+    /* bottom fixed CTA */
     .fab {
       position: fixed; left: 0; right: 0; bottom: 0;
       padding: 14px 16px;
@@ -108,43 +109,43 @@
       border-radius: 14px; padding: 16px;
       font-size: 18px;
     }
-    .btn:disabled { opacity: .6; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
 
-    /* nasconde gli input file tecnici */
+    /* hide technical file inputs */
     input[type="file"] { display: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Scanner Biglietti da Visita</h1>
+    <h1>Business Card Scanner</h1>
 
     <div class="card">
-      <!-- input nascosti -->
+      <!-- hidden inputs -->
       <input id="fileCamera"  type="file" accept="image/*" capture="environment">
       <input id="fileGallery" type="file" accept="image/*,.jpg,.jpeg,.png">
 
-      <!-- azioni -->
+      <!-- actions -->
       <div class="btn-row">
-        <button id="btnCamera"  class="btn">📷 Scatta foto</button>
-        <button id="btnGallery" class="btn btn-outline">🖼️ Scegli dalla galleria</button>
+        <button id="btnCamera"  class="btn">📷 Photo</button>
+        <button id="btnGallery" class="btn btn-outline">🖼️ Gallery</button>
       </div>
-      <div class="hint">Suggerimento: la galleria è più stabile su Android quando vuoi scegliere una foto già esistente.</div>
+      <div class="hint">Tip: use Gallery if you already have a photo saved on your phone.</div>
 
-      <!-- anteprima -->
+      <!-- preview -->
       <div id="preview"></div>
 
-      <!-- esito -->
+      <!-- result -->
       <div id="result" style="display:none;"></div>
       <div id="status" class="status"></div>
     </div>
   </div>
 
-  <!-- pulsante invio fisso in basso -->
+  <!-- bottom CTA -->
   <div class="fab">
-    <button id="sendBtn" class="btn btn-primary" disabled>Estrai e salva</button>
+    <button id="sendBtn" class="btn btn-primary" disabled>Extract &amp; Save</button>
   </div>
 
-  <!-- collega lo script con cache-busting -->
-  <script src="script.js?v=7"></script>
+  <!-- cache-busting to avoid old JS -->
+  <script src="script.js?v=10"></script>
 </body>
 </html>
