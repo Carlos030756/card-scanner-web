@@ -1,74 +1,93 @@
-const API_URL = "YOUR_WEBAPP_URL"; // ← qui inserisci l’URL del tuo Apps Script WebApp
-const API_KEY = "BigKeyMaxy1";     // deve corrispondere a quello che hai nello script Google
+/******** CONFIG ********/
+const API_URL = "https://card-scanner-dd5685.netlify.app/";   // <-- incolla qui l'URL della tua Web App Apps Script
+const API_KEY = "BigKeyMaxy1";       // <-- deve combaciare con quello nello script Apps Script
 
-let currentImageBase64 = "";
+/******** DOM refs ********/
+const cameraInput = document.getElementById("cameraInput"); // <input capture>
+const galleryInput = document.getElementById("file");       // <input gallery>
+const sendBtn      = document.getElementById("sendBtn");
+const statusEl     = document.getElementById("status");
+const previewEl    = document.getElementById("preview");
+const resultEl     = document.getElementById("result");
 
-// Buttons
-const btnCamera = document.getElementById("btnCamera");
-const btnGallery = document.getElementById("btnGallery");
-const fileCamera = document.getElementById("fileCamera");
-const fileGallery = document.getElementById("fileGallery");
-const sendBtn = document.getElementById("sendBtn");
-const resultDiv = document.getElementById("result");
+let imageBase64 = "";   // solo il payload (senza "data:image/...;base64,")
 
-// Open camera
-btnCamera.addEventListener("click", () => fileCamera.click());
-// Open gallery
-btnGallery.addEventListener("click", () => fileGallery.click());
+/******** helpers ********/
+function showStatus(msg, type = "") {
+  statusEl.textContent = msg;
+  statusEl.style.color = type === "error" ? "#c1121f" : type === "ok" ? "#1fb980" : "";
+}
 
-// Handle image selection
-[fileCamera, fileGallery].forEach(input => {
-  input.addEventListener("change", () => {
-    const file = input.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        currentImageBase64 = reader.result.split(",")[1];
-        resultDiv.innerHTML = `<p><em>Image ready, press "Extract & Save"</em></p>`;
-        sendBtn.disabled = false;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
+function setPreviewFromFile(file) {
+  const url = URL.createObjectURL(file);
+  previewEl.innerHTML = `<img src="${url}" alt="preview">`;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const full = reader.result;                // es. "data:image/jpeg;base64,AAAA..."
+    imageBase64 = String(full).split(",")[1] || "";
+    sendBtn.disabled = !imageBase64;
+    showStatus('Image ready. Tap "Extract & Save".');
+  };
+  reader.readAsDataURL(file);
+}
+
+/******** events: inputs ********/
+cameraInput.addEventListener("change", () => {
+  const f = cameraInput.files && cameraInput.files[0];
+  if (!f) return;
+  setPreviewFromFile(f);
 });
 
-// Send image to backend
-sendBtn.addEventListener("click", async () => {
-  if (!currentImageBase64) return;
+galleryInput.addEventListener("change", () => {
+  const f = galleryInput.files && galleryInput.files[0];
+  if (!f) return;
+  setPreviewFromFile(f);
+});
 
-  resultDiv.innerHTML = `<p><em>Processing...</em></p>`;
+/******** send to backend ********/
+sendBtn.addEventListener("click", async () => {
+  if (!imageBase64) return;
+
   sendBtn.disabled = true;
+  resultEl.style.display = "none";
+  resultEl.innerHTML = "";
+  showStatus("Processing...");
 
   try {
-    const res = await fetch(`${API_URL}?key=${API_KEY}`, {
+    const res = await fetch(`${API_URL}?key=${encodeURIComponent(API_KEY)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        imageBase64: currentImageBase64,
-        fileName: "card.jpg"
+        imageBase64,
+        fileName: "card.jpg" // va bene anche per PNG, il backend rileva il mime
       })
     });
 
-    const data = await res.json();
+    // se per qualche motivo la response non è JSON, evita crash
+    let data = {};
+    const text = await res.text();
+    try { data = JSON.parse(text); } catch { throw new Error(text || "Invalid response"); }
 
-    if (data.ok) {
-      const p = data.parsed;
-      resultDiv.innerHTML = `
-        <p><strong>Name:</strong> ${p.full_name || ""}</p>
-        <p><strong>Company:</strong> ${p.company || ""}</p>
-        <p><strong>Role:</strong> ${p.role || ""}</p>
-        <p><strong>Email:</strong> ${p.email || ""}</p>
-        <p><strong>Phone:</strong> ${p.phone || ""}</p>
-        <p><strong>Website:</strong> ${p.website || ""}</p>
-        <p><strong>Address:</strong> ${p.address || ""}</p>
-        <p style="color:green"><strong>Saved ✔</strong></p>
-      `;
-    } else {
-      throw new Error(data.error || "Unknown error");
-    }
+    if (!data.ok) throw new Error(data.error || "Unknown error");
+
+    const p = data.parsed || {};
+    resultEl.innerHTML = `
+      <div><strong>Name</strong>: ${p.full_name || ""}</div>
+      <div><strong>Company</strong>: ${p.company || ""}</div>
+      <div><strong>Role</strong>: ${p.role || ""}</div>
+      <div><strong>Email</strong>: ${p.email || ""}</div>
+      <div><strong>Phone</strong>: ${p.phone || ""}</div>
+      <div><strong>Website</strong>: ${p.website || ""}</div>
+      <div><strong>Address</strong>: ${p.address || ""}</div>
+    `;
+    resultEl.style.display = "block";
+    showStatus("Saved ✔", "ok");
   } catch (err) {
-    resultDiv.innerHTML = `<p style="color:red"><strong>Error:</strong> ${err.message}</p>`;
+    console.error(err);
+    showStatus(`Error: ${err.message}`, "error");
+    alert(err.message || String(err));
+  } finally {
+    sendBtn.disabled = false;
   }
-
-  sendBtn.disabled = false;
 });
