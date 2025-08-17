@@ -5,33 +5,40 @@ export async function handler(event) {
       return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const { APPSSCRIPT_URL, API_KEY } = process.env;
-    if (!APPSSCRIPT_URL) {
-      return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Missing APPSSCRIPT_URL env var' }) };
+    // Fallback multipli per NON rimanere bloccati se il nome è diverso
+    const env = process.env;
+    const appscriptUrl =
+      env.APPS_SCRIPT_URL || env.APPSSCRIPT_URL || env.APPS_SCRIPT || env.APPSSCRIPT;
+    const apiKey =
+      env.API_KEY || env.APPS_SCRIPT_KEY || env.APPSSCRIPT_KEY || '';
+
+    if (!appscriptUrl) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ ok: false, error: 'Missing APPS_SCRIPT_URL env var' })
+      };
     }
 
-    // Il client ci manda JSON (imageBase64, fileName)
+    // Log non sensibili (lunghezze) per capire se le env ci sono
+    console.log('scan fn: url ok, key length =', apiKey ? apiKey.length : 0);
+
     const bodyIn = event.body || '{}';
 
-    // Forward verso Apps Script (server-side: niente CORS)
-    const upstream = await fetch(`${APPSSCRIPT_URL}?key=${encodeURIComponent(API_KEY || '')}`, {
+    // Forward server-side verso Apps Script (niente CORS dal browser)
+    const upstream = await fetch(`${appscriptUrl}?key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
-      // Importante: text/plain per evitare preflight inutili lato GAS
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight su GAS
       body: bodyIn
     });
 
-    const text = await upstream.text(); // potrebbe essere JSON o errore testuale
-
+    const text = await upstream.text();
     return {
       statusCode: upstream.status,
       headers: { 'Content-Type': 'application/json' },
       body: text
     };
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ ok: false, error: String(err) })
-    };
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ ok: false, error: String(err) }) };
   }
 }
