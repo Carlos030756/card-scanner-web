@@ -12,7 +12,7 @@
       background: #f7f7f7;
     }
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
     .btn {
       display: inline-block;
@@ -35,6 +35,17 @@
       align-items: center;
       justify-content: center;
       width: 160px;
+    }
+    #buttons-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    #sendBtn {
+      background:#28a745;
+      color:white;
+      margin-top: 10px;
     }
     #preview img {
       max-width: 300px;
@@ -60,18 +71,21 @@
 <body>
   <h1>Business Card Scanner</h1>
 
-  <!-- Button for selecting from gallery -->
-  <label id="galleryLabel" class="btn" for="file">Choose from Gallery</label>
-  <input type="file" id="file" accept="image/*" style="display:none">
+  <!-- Container for side-by-side buttons -->
+  <div id="buttons-container">
+    <!-- Camera Button -->
+    <label id="cameraLabel" class="btn" for="cameraInput">
+      📷 <span style="margin-left: 8px;">Photo</span>
+    </label>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
 
-  <!-- Button for camera capture -->
-  <label id="cameraLabel" class="btn" for="cameraInput">
-    📷 <span style="margin-left: 8px;">Photo</span>
-  </label>
-  <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+    <!-- Gallery Button -->
+    <label id="galleryLabel" class="btn" for="file">Choose from Gallery</label>
+    <input type="file" id="file" accept="image/*" style="display:none">
+  </div>
 
-  <br>
-  <button id="sendBtn" class="btn" style="background:#28a745;color:white;">Extract & Save</button>
+  <!-- Extract Button -->
+  <button id="sendBtn" class="btn">Extract & Save</button>
 
   <div id="status"></div>
   <div id="preview"></div>
