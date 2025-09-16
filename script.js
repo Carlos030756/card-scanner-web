@@ -1,5 +1,5 @@
 /******** CONFIG ********/
-const API_URL = "https://script.google.com/macros/s/AKfycbzza_BYFFN77MJESFGh7GSrYfP63aEmdnaOcYLVWdwblQPo5iozYI_J71BclvGHxJYliA/exec"; // <-- URL Web App Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbzHcNt3Tay0fjAoQbbnvQVLIWnOmchvWNg3zcgyzTi_7phb6aHEyKQyWDy7v0E5cdliTg/exec"; // <-- URL Web App Apps Script
 const API_KEY = "BigKeyMaxy1";       // <-- deve combaciare con quello nello script Apps Script
 
 /******** DOM refs ********/
