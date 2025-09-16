@@ -1,18 +1,19 @@
 /******** CONFIG ********/
-const API_URL = "https://script.google.com/macros/s/AKfycbylucpybDEHvu39GZLJ4WQIXWL2MFuVO4QAEqIJUCTtnuoA0NHGOFGp7_P68OMjFObY/exec"; // <-- URL Web App Apps Script
-const API_KEY = "BigKeyMaxy1";       // <-- deve combaciare con quello nello script Apps Script
+// IMPORTANTE: Cambia questo URL con quello del tuo Google Apps Script deployato
+const API_URL = "https://script.google.com/macros/s/AKfycby9-4Bcj2lpAWzfjp_TBU5FWj6xZ8wAvceu4YGXFpFKQeMvCGhDEN8kiTB8tFGAS1XOmw/exec";
+const API_KEY = "BigKeyMaxy1";
 
 /******** DOM refs ********/
-const cameraInput = document.getElementById("cameraInput"); // <input capture>
-const galleryInput = document.getElementById("file");       // <input gallery>
-const sendBtn      = document.getElementById("sendBtn");
-const statusEl     = document.getElementById("status");
-const previewEl    = document.getElementById("preview");
-const resultEl     = document.getElementById("result");
-const commentInput = document.getElementById("commentInput"); // Campo commento
-const charCount    = document.getElementById("charCount");   // Contatore caratteri
+const cameraInput = document.getElementById("cameraInput");
+const galleryInput = document.getElementById("file");
+const sendBtn = document.getElementById("sendBtn");
+const statusEl = document.getElementById("status");
+const previewEl = document.getElementById("preview");
+const resultEl = document.getElementById("result");
+const commentInput = document.getElementById("commentInput");
+const charCount = document.getElementById("charCount");
 
-let imageBase64 = "";   // solo il payload (senza "data:image/...;base64,")
+let imageBase64 = "";
 
 /******** helpers ********/
 function showStatus(msg, type = "") {
@@ -25,7 +26,7 @@ function setPreviewFromFile(file) {
   previewEl.innerHTML = `<img src="${url}" alt="preview">`;
   const reader = new FileReader();
   reader.onloadend = () => {
-    const full = reader.result;                // es. "data:image/jpeg;base64,AAAA..."
+    const full = reader.result;
     imageBase64 = String(full).split(",")[1] || "";
     sendBtn.disabled = !imageBase64;
     showStatus('Image ready. Tap "Extract & Save".');
@@ -33,12 +34,10 @@ function setPreviewFromFile(file) {
   reader.readAsDataURL(file);
 }
 
-// Aggiorna il contatore dei caratteri
 function updateCharCount() {
   const currentLength = commentInput.value.length;
   charCount.textContent = currentLength;
   
-  // Cambia colore se si avvicina al limite
   if (currentLength > 450) {
     charCount.style.color = '#c1121f';
   } else if (currentLength > 400) {
@@ -61,7 +60,6 @@ galleryInput.addEventListener("change", () => {
   setPreviewFromFile(f);
 });
 
-// Event listener per il contatore caratteri
 commentInput.addEventListener('input', updateCharCount);
 
 /******** send to backend ********/
@@ -74,23 +72,27 @@ sendBtn.addEventListener("click", async () => {
   showStatus("Processing...");
   
   try {
-    const res = await fetch('/.netlify/functions/scan', {
+    // CHIAMATA DIRETTA AL GOOGLE APPS SCRIPT (NON alla funzione Netlify)
+    const url = `${API_URL}?key=${API_KEY}`;
+    
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, // qui va bene JSON, è stessa origine
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         imageBase64,
         fileName: 'card.jpg',
-        comment: commentInput.value.trim() // Aggiungi il commento ai dati inviati
+        comment: commentInput.value.trim() // Il commento viene inviato
       })
     });
     
-    // se per qualche motivo la response non è JSON, evita crash
     let data = {};
     const text = await res.text();
     try { 
       data = JSON.parse(text); 
     } catch { 
-      throw new Error(text || "Invalid response"); 
+      throw new Error(`Invalid response: ${text}`); 
     }
     
     if (!data.ok) throw new Error(data.error || "Unknown error");
@@ -112,18 +114,18 @@ sendBtn.addEventListener("click", async () => {
     resultEl.style.display = "block";
     showStatus("Saved ✔", "ok");
     
-    // Reset dell'interfaccia dopo il salvataggio riuscito
+    // Reset interfaccia
     commentInput.value = '';
     updateCharCount();
     
   } catch (err) {
-    console.error(err);
+    console.error('Error details:', err);
     showStatus(`Error: ${err.message}`, "error");
-    alert(err.message || String(err));
+    alert(`Error: ${err.message}`);
   } finally {
     sendBtn.disabled = false;
   }
 });
 
-// Inizializza il contatore caratteri al caricamento della pagina
+// Inizializza contatore caratteri
 updateCharCount();
