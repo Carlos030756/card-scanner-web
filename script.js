@@ -1,6 +1,6 @@
 /******** CONFIG ********/
 // IMPORTANTE: Cambia questo URL con quello del tuo Google Apps Script deployato
-const API_URL = "https://script.google.com/macros/s/AKfycby9-4Bcj2lpAWzfjp_TBU5FWj6xZ8wAvceu4YGXFpFKQeMvCGhDEN8kiTB8tFGAS1XOmw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzHwxgUQii1Q0vBsDAeLudDkeOSMrYaEQnKsWN5womcqmAEI-Lvc4t6jNP22ur2mrkSlw/exec";
 const API_KEY = "BigKeyMaxy1";
 
 /******** DOM refs ********/
