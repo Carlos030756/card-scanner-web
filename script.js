@@ -1,7 +1,6 @@
 /******** CONFIG ********/
-// IMPORTANTE: Cambia questo URL con quello del tuo Google Apps Script deployato
-const API_URL = "https://script.google.com/macros/s/AKfycbzHwxgUQii1Q0vBsDAeLudDkeOSMrYaEQnKsWN5womcqmAEI-Lvc4t6jNP22ur2mrkSlw/exec";
-const API_KEY = "BigKeyMaxy1";
+// usa la funzione Netlify come proxy (stessa origine, niente CORS)
+const API_URL = "/.netlify/functions/gs-proxy";
 
 /******** DOM refs ********/
 const cameraInput = document.getElementById("cameraInput");
@@ -72,8 +71,8 @@ sendBtn.addEventListener("click", async () => {
   showStatus("Processing...");
   
   try {
-    // CHIAMATA DIRETTA AL GOOGLE APPS SCRIPT (NON alla funzione Netlify)
-    const url = `${API_URL}?key=${API_KEY}`;
+    // CHIAMO LA FUNZIONE NETLIFY (proxy) — evita problemi CORS
+    const url = API_URL;
     
     const res = await fetch(url, {
       method: 'POST',
@@ -117,6 +116,8 @@ sendBtn.addEventListener("click", async () => {
     // Reset interfaccia
     commentInput.value = '';
     updateCharCount();
+    imageBase64 = "";
+    previewEl.innerHTML = "";
     
   } catch (err) {
     console.error('Error details:', err);

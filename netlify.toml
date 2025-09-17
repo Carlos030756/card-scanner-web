@@ -1,5 +1,10 @@
 [build]
   publish = "."
+  command = ""
+  functions = "netlify/functions"
+
+[build.processing]
+  skip_processing = true
 
 [[headers]]
   for = "/"
